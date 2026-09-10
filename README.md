@@ -1,0 +1,125 @@
+# golangci-json
+
+Marshal [golangci-lint v2](https://golangci-lint.run)'s `config.Config` to JSON.
+
+```go
+import (
+	"os"
+
+	golangcijson "github.com/MarkRosemaker/portfolio/golangci-json"
+	"github.com/golangci/golangci-lint/v2/pkg/config"
+)
+
+cfg := config.Config{
+	Version: "2",
+	Linters: config.Linters{
+		Default: config.GroupNone,
+		Enable:  []string{"tagalign"},
+		Settings: config.LintersSettings{
+			TagAlign: config.TagAlignSettings{Align: true, Sort: true},
+		},
+	},
+}
+
+golangcijson.MarshalWriteJSON(os.Stdout, cfg)
+```
+
+```json
+{
+  "version": "2",
+  "linters": {
+    "default": "none",
+    "enable": ["tagalign"],
+    "settings": {
+      "tagalign": {"align": true, "sort": true}
+    }
+  }
+}
+```
+
+## Getting YAML
+
+This package only produces JSON: golangci-lint's config file is YAML, but the
+translation from `mapstructure` tags happens once, into JSON, and every YAML
+library already round-trips through JSON anyway — so rather than this package
+picking one and every consumer paying for it, `Marshalers` (the registered set
+of type conversions, [`*json.Marshalers`](https://pkg.go.dev/encoding/json/v2#Marshalers))
+is exported for a caller to combine with whichever JSON options and YAML
+library they want:
+
+```go
+import (
+	"encoding/json/jsontext"
+	"encoding/json/v2"
+
+	"github.com/MarkRosemaker/json2yaml"
+	"github.com/MarkRosemaker/portfolio/lintconfig"
+	"gopkg.in/yaml.v3"
+)
+
+b, err := json.Marshal(cfg, json.WithMarshalers(lintconfig.Marshalers))
+node, err := json2yaml.Convert(jsontext.Value(b))
+yaml.NewEncoder(os.Stdout).Encode(node)
+```
+
+`internal/lintgen` in this repository does exactly this to produce
+`maintain/lint.yaml`.
+
+## Why this exists
+
+golangci-lint's own `config.Config` decodes a config file via
+[mapstructure](https://github.com/go-viper/mapstructure) — its fields are
+tagged `mapstructure:"tab-len"`, not `json:"tab-len"` — and offers nothing for
+the reverse direction. Marshaling it with `encoding/json` directly falls back
+to raw Go field names (`TabLen`) with every zero value spelled out.
+
+This package fixes that by hand: for every type in `config.Config`'s field
+tree, a matching *shadow type* declares the same fields with `json` tags
+instead of `mapstructure` ones, and a custom marshaler converts one to the
+other before encoding. The type conversion (`tagAlignSettings(v)`) only
+compiles when the two types have identical fields — so when golangci-lint
+adds, removes, or retypes a field, **this package fails to build** rather than
+silently marshaling the old shape. That's a deliberate trade against a purely
+reflection-driven approach: a build breaking on a golangci-lint upgrade is
+strictly better than a config file that goes quietly wrong.
+
+## Omission is per field, not automatic
+
+A field is written only when it differs from what leaving it out of a real
+config file would mean. For most fields that's the Go zero value — but
+several booleans across golangci-lint's linters default to `true` (`usetesting`'s
+`os-chdir`, `tagalign`'s `align` and `sort`, several `unused` checks, and
+others), cross-checked against golangci-lint's own `defaultLintersSettings`
+and `defaultFormatterSettings`. For those, the shadow type omits no zero
+value: an explicit `false` is always written, so it can never be confused
+with "not set" and silently replaced by golangci-lint's own default.
+
+One consequence follows directly from using plain Go values: a settings
+struct is itself omitted when *every* one of its fields happens to be the Go
+zero value, because a value type has no way to represent "this key was
+present with every field at its default" separately from "this key was
+absent" — golangci-lint's own decoder has the identical limitation, for the
+identical reason. In practice this means: set every field of a settings
+struct whose true default you want to keep, not only the ones you're
+changing — leaving a field off is Go zero, never "keep the default".
+
+## Types that embed via `,squash`
+
+A few golangci-lint types embed another with `mapstructure:",squash"`,
+meaning the embedded struct's fields decode into the *same* map as the
+embedding type, not nested under a key. JSON's embedding rules look similar
+but aren't: an embedded field with a registered marshaler for its type is
+promoted using its own (Go) field names, completely bypassing that marshaler.
+Every such type — `ExcludeRule`, `SeverityRule`, `GoModGuardv2Blocked`,
+`TagliatelleCase`, `TagliatelleOverrides`, `Text`, `Tab`, `JUnitXML` — is
+therefore marshaled by hand in `squash.go`: the embedded value through its own
+shadow type, the type's own fields (if any) through a small anonymous one,
+merged into a single object.
+
+## What's covered
+
+Every struct type reachable from `config.Config`'s field tree — 143 types —
+has a shadow type and a registered marshaler. `Config` itself is handled by
+explicit field assignment rather than a type conversion, since it carries two
+unexported fields (`cfgDir`, `basePath`) that make direct conversion across
+packages illegal.
