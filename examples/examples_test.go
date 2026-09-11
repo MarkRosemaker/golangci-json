@@ -2,7 +2,6 @@ package examples
 
 import (
 	"log"
-
 	"os"
 
 	golangcijson "github.com/MarkRosemaker/golangci-json"
@@ -10,7 +9,7 @@ import (
 )
 
 func Example_json() {
-	var cfg = config.Config{
+	cfg := config.Config{
 		Version: "2",
 		Linters: config.Linters{
 			Default: config.GroupNone,
