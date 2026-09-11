@@ -416,15 +416,15 @@ type godoclintSettings struct {
 	Disable []string `json:"disable,omitempty"`
 	Options struct {
 		MaxLen struct {
-			Length *uint `mapstructure:"length"`
-		} `mapstructure:"max-len"`
+			Length *uint `json:"length"`
+		} `json:"max-len"`
 		RequireDoc struct {
-			IgnoreExported   *bool `mapstructure:"ignore-exported"`
-			IgnoreUnexported *bool `mapstructure:"ignore-unexported"`
-		} "mapstructure:\"require-doc\""
+			IgnoreExported   *bool `json:"ignore-exported"`
+			IgnoreUnexported *bool `json:"ignore-unexported"`
+		} `json:"require-doc"`
 		StartWithName struct {
-			IncludeUnexported *bool `mapstructure:"include-unexported"`
-		} "mapstructure:\"start-with-name\""
+			IncludeUnexported *bool `json:"include-unexported"`
+		} `json:"start-with-name"`
 	} `json:"options,omitzero"`
 }
 

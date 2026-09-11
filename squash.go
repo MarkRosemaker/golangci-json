@@ -8,6 +8,8 @@ import (
 	"github.com/golangci/golangci-lint/v2/pkg/config"
 )
 
+// TODO: why not just use json embedding via json tag?
+
 // The types below all embed another config type via mapstructure:",squash":
 // mapstructure flattens the embedded struct's fields into the same map as
 // the type doing the embedding, rather than nesting them under a key of
