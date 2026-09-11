@@ -5,7 +5,6 @@ import (
 	"encoding/json/v2"
 	"io"
 
-	"github.com/MarkRosemaker/jsonutil"
 	config "github.com/golangci/golangci-lint/v2/pkg/config"
 )
 
@@ -32,7 +31,6 @@ import (
 // entirely.
 var (
 	Marshalers = []*json.Marshalers{
-		json.MarshalToFunc(jsonutil.DurationMarshalString),
 		json.MarshalToFunc(marshalConfig),
 		json.MarshalToFunc(func(enc *jsontext.Encoder, v config.AsasalintSettings) error {
 			return json.MarshalEncode(enc, asasalintSettings(v))
@@ -467,12 +465,12 @@ func marshalConfig(enc *jsontext.Encoder, cfg config.Config) error {
 	})
 }
 
-// MarshalWriteJSON encodes cfg as JSON, writing it to w.
-func MarshalWriteJSON(w io.Writer, cfg config.Config) error {
+// MarshalWrite encodes cfg as JSON, writing it to w.
+func MarshalWrite(w io.Writer, cfg config.Config) error {
 	return json.MarshalWrite(w, cfg, jsonOpts)
 }
 
-// MarshalJSON encodes cfg as JSON.
-func MarshalJSON(cfg config.Config) ([]byte, error) {
+// Marshal encodes cfg as JSON.
+func Marshal(cfg config.Config) ([]byte, error) {
 	return json.Marshal(cfg, jsonOpts)
 }

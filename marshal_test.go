@@ -1,43 +1,12 @@
 package golangcijson_test
 
 import (
-	"bytes"
-	"encoding/json/jsontext"
-	"encoding/json/v2"
 	"strings"
 	"testing"
 
 	golangcijson "github.com/MarkRosemaker/golangci-json"
-	"github.com/MarkRosemaker/json2yaml"
 	"github.com/golangci/golangci-lint/v2/pkg/config"
-	"gopkg.in/yaml.v3"
 )
-
-// marshalYAML exercises the exact recipe the package README gives for YAML —
-// json.Marshal with the exported Marshalers, then any JSON-to-YAML converter
-// — rather than the package providing YAML support itself. Kept here, not in
-// the package, so golangcijson's own dependency list stays JSON-only; a test
-// file's imports don't become part of what a library consumer has to fetch.
-func marshalYAML(t *testing.T, cfg config.Config) []byte {
-	t.Helper()
-
-	b, err := json.Marshal(cfg, json.WithMarshalers(json.JoinMarshalers(golangcijson.Marshalers...)))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	node, err := json2yaml.Convert(jsontext.Value(b))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var out bytes.Buffer
-	if err := yaml.NewEncoder(&out).Encode(node); err != nil {
-		t.Fatal(err)
-	}
-
-	return out.Bytes()
-}
 
 // TestOSChdirFalseIsWritten is the case that started this design: os-chdir
 // defaults to true in golangci-lint (see defaultLintersSettings in the
@@ -61,13 +30,16 @@ func TestOSChdirFalseIsWritten(t *testing.T) {
 		},
 	}
 
-	got := marshalYAML(t, cfg)
-
-	if !strings.Contains(string(got), "os-chdir: false") {
-		t.Errorf("explicit os-chdir: false was lost:\n%s", got)
+	got, err := golangcijson.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if !strings.Contains(string(got), "os-mkdir-temp: true") {
+	if want := `"os-chdir": false`; !strings.Contains(string(got), want) {
+		t.Errorf("explicit %s was lost:\n%s", want, got)
+	}
+
+	if want := `"os-mkdir-temp": true,`; !strings.Contains(string(got), want) {
 		t.Errorf("got:\n%s", got)
 	}
 }
@@ -94,7 +66,10 @@ func TestZeroSettingsStructOmitsTheWholeBlock(t *testing.T) {
 		},
 	}
 
-	got := marshalYAML(t, cfg)
+	got, err := golangcijson.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if strings.Contains(string(got), "usetesting") {
 		t.Errorf("expected the whole usetesting block to disappear (every field is Go zero), got:\n%s", got)
@@ -129,32 +104,45 @@ func TestMarshalRealisticConfig(t *testing.T) {
 		},
 	}
 
-	got := marshalYAML(t, cfg)
+	got, err := golangcijson.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	want := `version: 2
-linters:
-    default: none
-    enable:
-        - usetesting
-        - tagalign
-    settings:
-        tagalign:
-            align: true
-            sort: true
-            order:
-                - json
-                - required
-        usetesting:
-            os-chdir: true
-            os-mkdir-temp: true
-            os-setenv: true
-            os-create-temp: true
-formatters:
-    enable:
-        - gofumpt
-    exclusions:
-        generated: strict
-`
+	want := `{
+  "version": "2",
+  "linters": {
+    "default": "none",
+    "enable": [
+      "usetesting",
+      "tagalign"
+    ],
+    "settings": {
+      "tagalign": {
+        "align": true,
+        "sort": true,
+        "order": [
+          "json",
+          "required"
+        ]
+      },
+      "usetesting": {
+        "os-chdir": true,
+        "os-mkdir-temp": true,
+        "os-setenv": true,
+        "os-create-temp": true
+      }
+    }
+  },
+  "formatters": {
+    "enable": [
+      "gofumpt"
+    ],
+    "exclusions": {
+      "generated": "strict"
+    }
+  }
+}`
 
 	if string(got) != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
@@ -164,7 +152,7 @@ formatters:
 // TestMarshalWriteJSONHasNoTrailingNewline matches encoding/json.Marshal's
 // convention (no trailing newline).
 func TestMarshalWriteJSONHasNoTrailingNewline(t *testing.T) {
-	got, err := golangcijson.MarshalJSON(config.Config{Version: "2"})
+	got, err := golangcijson.Marshal(config.Config{Version: "2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +171,7 @@ func TestMarshalInternalFieldsAreExcluded(t *testing.T) {
 	cfg.InternalTest = true
 	cfg.InternalCmdTest = true
 
-	got, err := golangcijson.MarshalJSON(cfg)
+	got, err := golangcijson.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,9 +197,17 @@ func TestMarshalFormatterExclusions(t *testing.T) {
 		},
 	}
 
-	got := marshalYAML(t, cfg)
+	got, err := golangcijson.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	for _, want := range []string{"generated: strict", "paths:", "vendor/.*", "warn-unused: true"} {
+	for _, want := range []string{
+		`"generated": "strict",`,
+		`"paths":`,
+		`"vendor/.*"`,
+		`"warn-unused": true`,
+	} {
 		if !strings.Contains(string(got), want) {
 			t.Errorf("output is missing %q:\n%s", want, got)
 		}
@@ -240,9 +236,12 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			},
 		}
 
-		got := marshalYAML(t, cfg)
+		got, err := golangcijson.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		for _, want := range []string{"path: vendor/.*", "errcheck"} {
+		for _, want := range []string{`"path": "vendor/.*"`, `"errcheck"`} {
 			if !strings.Contains(string(got), want) {
 				t.Errorf("got:\n%s\nmissing %q", got, want)
 			}
@@ -259,9 +258,12 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			},
 		}
 
-		got := marshalYAML(t, cfg)
+		got, err := golangcijson.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		for _, want := range []string{"path: foo.go", "severity: error"} {
+		for _, want := range []string{`"path": "foo.go",`, `"severity": "error"`} {
 			if !strings.Contains(string(got), want) {
 				t.Errorf("got:\n%s\nmissing %q", got, want)
 			}
@@ -282,9 +284,12 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			},
 		}
 
-		got := marshalYAML(t, cfg)
+		got, err := golangcijson.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		for _, want := range []string{"module: bad/module", "reason: deprecated"} {
+		for _, want := range []string{`"module": "bad/module",`, `"reason": "deprecated"`} {
 			if !strings.Contains(string(got), want) {
 				t.Errorf("got:\n%s\nmissing %q", got, want)
 			}
@@ -308,9 +313,12 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			},
 		}
 
-		got := marshalYAML(t, cfg)
+		got, err := golangcijson.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		for _, want := range []string{"use-field-name: true", "pkg: foo/bar"} {
+		for _, want := range []string{`"use-field-name": true,`, `"pkg": "foo/bar"`} {
 			if !strings.Contains(string(got), want) {
 				t.Errorf("got:\n%s\nmissing %q", got, want)
 			}
@@ -328,12 +336,15 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			},
 		}
 
-		got := marshalYAML(t, cfg)
+		got, err := golangcijson.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		for _, want := range []string{
-			"path: stdout", "colors: true",
-			"path: tab.txt", "print-linter-name: true",
-			"path: out.xml", "extended: true",
+			`"path": "stdout",`, `"colors": true`,
+			`"path": "tab.txt",`, `"print-linter-name": true`,
+			`"path": "out.xml",`, `"extended": true`,
 		} {
 			if !strings.Contains(string(got), want) {
 				t.Errorf("got:\n%s\nmissing %q", got, want)

@@ -4,24 +4,30 @@ Marshal [golangci-lint v2](https://golangci-lint.run)'s `config.Config` to JSON.
 
 ```go
 import (
+	"log"
+
 	"os"
 
-	golangcijson "github.com/MarkRosemaker/portfolio/golangci-json"
+	golangcijson "github.com/MarkRosemaker/golangci-json"
 	"github.com/golangci/golangci-lint/v2/pkg/config"
 )
 
-cfg := config.Config{
-	Version: "2",
-	Linters: config.Linters{
-		Default: config.GroupNone,
-		Enable:  []string{"tagalign"},
-		Settings: config.LintersSettings{
-			TagAlign: config.TagAlignSettings{Align: true, Sort: true},
+func main() {
+	var cfg = config.Config{
+		Version: "2",
+		Linters: config.Linters{
+			Default: config.GroupNone,
+			Enable:  []string{"tagalign"},
+			Settings: config.LintersSettings{
+				TagAlign: config.TagAlignSettings{Align: true, Sort: true},
+			},
 		},
-	},
-}
+	}
 
-golangcijson.MarshalWriteJSON(os.Stdout, cfg)
+	if err := golangcijson.MarshalWrite(os.Stdout, cfg); err != nil {
+		log.Fatal(err)
+	}
+}
 ```
 
 ```json
@@ -29,9 +35,14 @@ golangcijson.MarshalWriteJSON(os.Stdout, cfg)
   "version": "2",
   "linters": {
     "default": "none",
-    "enable": ["tagalign"],
+    "enable": [
+      "tagalign"
+    ],
     "settings": {
-      "tagalign": {"align": true, "sort": true}
+      "tagalign": {
+        "align": true,
+        "sort": true
+      }
     }
   }
 }
@@ -39,37 +50,54 @@ golangcijson.MarshalWriteJSON(os.Stdout, cfg)
 
 ## Getting YAML
 
-This package only produces JSON: golangci-lint's config file is YAML, but the
-translation from `mapstructure` tags happens once, into JSON, and every YAML
-library already round-trips through JSON anyway — so rather than this package
-picking one and every consumer paying for it, `Marshalers` (the registered set
-of type conversions, [`*json.Marshalers`](https://pkg.go.dev/encoding/json/v2#Marshalers))
-is exported for a caller to combine with whichever JSON options and YAML
-library they want:
+This package only produces JSON - but you can convert it to YAML:
 
 ```go
 import (
 	"encoding/json/jsontext"
-	"encoding/json/v2"
+	"os"
 
+	golangcijson "github.com/MarkRosemaker/golangci-json"
 	"github.com/MarkRosemaker/json2yaml"
-	"github.com/MarkRosemaker/portfolio/lintconfig"
+	"github.com/golangci/golangci-lint/v2/pkg/config"
 	"gopkg.in/yaml.v3"
 )
 
-b, err := json.Marshal(cfg, json.WithMarshalers(lintconfig.Marshalers))
-node, err := json2yaml.Convert(jsontext.Value(b))
-yaml.NewEncoder(os.Stdout).Encode(node)
+func Example_yaml() {
+	var cfg = config.Config{
+		Version: "2",
+		Linters: config.Linters{
+			Default: config.GroupNone,
+			Enable:  []string{"tagalign"},
+			Settings: config.LintersSettings{
+				TagAlign: config.TagAlignSettings{Align: true, Sort: true},
+			},
+		},
+	}
+
+	b, _ := golangcijson.Marshal(cfg)
+	node, _ := json2yaml.Convert(jsontext.Value(b))
+	_ = yaml.NewEncoder(os.Stdout).Encode(node)
+}
 ```
 
-`internal/lintgen` in this repository does exactly this to produce
-`maintain/lint.yaml`.
+```yaml
+version: 2
+linters:
+    default: none
+    enable:
+        - tagalign
+    settings:
+        tagalign:
+            align: true
+            sort: true
+```
 
 ## Why this exists
 
 golangci-lint's own `config.Config` decodes a config file via
 [mapstructure](https://github.com/go-viper/mapstructure) — its fields are
-tagged `mapstructure:"tab-len"`, not `json:"tab-len"` — and offers nothing for
+tagged `mapstructure:"tab-len"`, not `json:"tab-len"` or `yaml:"tab-len"` — and offers nothing for
 the reverse direction. Marshaling it with `encoding/json` directly falls back
 to raw Go field names (`TabLen`) with every zero value spelled out.
 
