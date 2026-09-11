@@ -70,11 +70,11 @@ type copyLoopVarSettings struct {
 }
 
 type customLinterSettings struct {
-	Type        string      `json:"type,omitzero"`
-	Path        string      `json:"path,omitzero"`
-	Description string      `json:"description,omitzero"`
-	OriginalURL string      `json:"original-url,omitzero"`
-	Settings    interface{} `json:"settings,omitzero"`
+	Type        string `json:"type,omitzero"`
+	Path        string `json:"path,omitzero"`
+	Description string `json:"description,omitzero"`
+	OriginalURL string `json:"original-url,omitzero"`
+	Settings    any    `json:"settings,omitzero"`
 }
 
 type cyclopSettings struct {
@@ -398,12 +398,12 @@ type goModGuardv2Settings struct {
 }
 
 type goSecSettings struct {
-	Includes    []string               `json:"includes,omitempty"`
-	Excludes    []string               `json:"excludes,omitempty"`
-	Severity    string                 `json:"severity,omitzero"`
-	Confidence  string                 `json:"confidence,omitzero"`
-	Config      map[string]interface{} `json:"config,omitempty"`
-	Concurrency int                    `json:"concurrency"`
+	Includes    []string       `json:"includes,omitempty"`
+	Excludes    []string       `json:"excludes,omitempty"`
+	Severity    string         `json:"severity,omitzero"`
+	Confidence  string         `json:"confidence,omitzero"`
+	Config      map[string]any `json:"config,omitempty"`
+	Concurrency int            `json:"concurrency"`
 }
 
 type gocognitSettings struct {
@@ -446,12 +446,12 @@ type gosmopolitanSettings struct {
 }
 
 type govetSettings struct {
-	Go         string                            `json:"-"`
-	Enable     []string                          `json:"enable,omitempty"`
-	Disable    []string                          `json:"disable,omitempty"`
-	EnableAll  bool                              `json:"enable-all,omitzero"`
-	DisableAll bool                              `json:"disable-all,omitzero"`
-	Settings   map[string]map[string]interface{} `json:"settings,omitempty"`
+	Go         string                    `json:"-"`
+	Enable     []string                  `json:"enable,omitempty"`
+	Disable    []string                  `json:"disable,omitempty"`
+	EnableAll  bool                      `json:"enable-all,omitzero"`
+	DisableAll bool                      `json:"disable-all,omitzero"`
+	Settings   map[string]map[string]any `json:"settings,omitempty"`
 }
 
 type grouperSettings struct {
@@ -470,8 +470,8 @@ type iNamedParamSettings struct {
 }
 
 type ifaceSettings struct {
-	Enable   []string                          `json:"enable,omitempty"`
-	Settings map[string]map[string]interface{} `json:"settings,omitempty"`
+	Enable   []string                  `json:"enable,omitempty"`
+	Settings map[string]map[string]any `json:"settings,omitempty"`
 }
 
 type importAsAlias struct {
@@ -781,11 +781,11 @@ type reviveDirective struct {
 }
 
 type reviveRule struct {
-	Name      string        `json:"name,omitzero"`
-	Arguments []interface{} `json:"arguments,omitempty"`
-	Severity  string        `json:"severity,omitzero"`
-	Disabled  bool          `json:"disabled,omitzero"`
-	Exclude   []string      `json:"exclude,omitempty"`
+	Name      string   `json:"name,omitzero"`
+	Arguments []any    `json:"arguments,omitempty"`
+	Severity  string   `json:"severity,omitzero"`
+	Disabled  bool     `json:"disabled,omitzero"`
+	Exclude   []string `json:"exclude,omitempty"`
 }
 
 type reviveSettings struct {

@@ -230,7 +230,7 @@ func TestMarshalSquashedTypes(t *testing.T) {
 			Linters: config.Linters{
 				Exclusions: config.LinterExclusions{
 					Rules: []config.ExcludeRule{{
-						BaseRule: config.BaseRule{Path: "vendor/.*", Linters: []string{"errcheck"}},
+						Path: "vendor/.*", Linters: []string{"errcheck"},
 					}},
 				},
 			},
@@ -252,7 +252,7 @@ func TestMarshalSquashedTypes(t *testing.T) {
 		cfg := config.Config{
 			Severity: config.Severity{
 				Rules: []config.SeverityRule{{
-					BaseRule: config.BaseRule{Path: "foo.go"},
+					Path:     "foo.go",
 					Severity: "error",
 				}},
 			},
@@ -276,8 +276,8 @@ func TestMarshalSquashedTypes(t *testing.T) {
 				Settings: config.LintersSettings{
 					Gomodguardv2: config.GoModGuardv2Settings{
 						Blocked: []config.GoModGuardv2Blocked{{
-							GoModGuardv2Base: config.GoModGuardv2Base{Module: "bad/module"},
-							Reason:           "deprecated",
+							Module: "bad/module",
+							Reason: "deprecated",
 						}},
 					},
 				},
@@ -304,8 +304,8 @@ func TestMarshalSquashedTypes(t *testing.T) {
 						Case: config.TagliatelleCase{
 							TagliatelleBase: config.TagliatelleBase{UseFieldName: true},
 							Overrides: []config.TagliatelleOverrides{{
-								TagliatelleBase: config.TagliatelleBase{UseFieldName: false},
-								Package:         "foo/bar",
+								UseFieldName: false,
+								Package:      "foo/bar",
 							}},
 						},
 					},
