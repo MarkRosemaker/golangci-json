@@ -1059,7 +1059,7 @@ type wSLv5Settings struct {
 	BranchMaxLines      int      `json:"branch-max-lines"`
 	CaseMaxLines        int      `json:"case-max-lines,omitzero"`
 	CuddleMaxStatements int      `json:"cuddle-max-statements"`
-	Default             string   `json:"default"`
+	Default             string   `json:"default,omitzero"`
 	Enable              []string `json:"enable,omitempty"`
 	Disable             []string `json:"disable,omitempty"`
 }
