@@ -9,7 +9,7 @@ github.com/fsnotify/fsnotify/internal
 ## explicit; go 1.18
 github.com/go-viper/mapstructure/v2
 github.com/go-viper/mapstructure/v2/internal/errors
-# github.com/golangci/golangci-lint/v2 v2.13.2
+# github.com/golangci/golangci-lint/v2 v2.14.0
 ## explicit; go 1.26.0
 github.com/golangci/golangci-lint/v2/pkg/config
 github.com/golangci/golangci-lint/v2/pkg/exitcodes

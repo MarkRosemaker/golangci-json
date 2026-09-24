@@ -167,9 +167,11 @@ func TestMarshalWriteJSONHasNoTrailingNewline(t *testing.T) {
 // part of the on-disk schema, and carrying no mapstructure tag at all — never
 // reach the output, however they are set.
 func TestMarshalInternalFieldsAreExcluded(t *testing.T) {
-	cfg := config.Config{Version: "2"}
-	cfg.InternalTest = true
-	cfg.InternalCmdTest = true
+	cfg := config.Config{
+		Version:         "2",
+		InternalTest:    true,
+		InternalCmdTest: true,
+	}
 
 	got, err := golangcijson.Marshal(cfg)
 	if err != nil {
