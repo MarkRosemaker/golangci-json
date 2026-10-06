@@ -23,7 +23,7 @@ github.com/hashicorp/go-version
 ## explicit; go 1.24.0
 github.com/ldez/grignotin/goenv
 github.com/ldez/grignotin/gomod
-# github.com/mattn/go-colorable v0.1.15
+# github.com/mattn/go-colorable v0.1.16
 ## explicit; go 1.18
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.24
