@@ -158,7 +158,7 @@ type errorLintSettings struct {
 
 type exhaustiveSettings struct {
 	Check                      []string `json:"check,omitempty"`
-	ExplicitExhaustive         bool     `json:"explicit-exhaustive"`
+	ExplicitExhaustive         bool     `json:"explicit-exhaustive,omitzero"`
 	OnlyTypes                  []string `json:"only-types,omitempty"`
 	IgnoreTypes                []string `json:"ignore-types,omitempty"`
 	IgnoreConstants            []string `json:"ignore-constants,omitempty"`
