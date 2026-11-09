@@ -65,12 +65,19 @@ strictly better than a config file that goes quietly wrong.
 
 A field is written only when it differs from what leaving it out of a real
 config file would mean. For most fields that's the Go zero value — but
-several booleans across golangci-lint's linters default to `true` (`usetesting`'s
-`os-chdir`, `tagalign`'s `align` and `sort`, several `unused` checks, and
-others), cross-checked against golangci-lint's own `defaultLintersSettings`
-and `defaultFormatterSettings`. For those, the shadow type omits no zero
-value: an explicit `false` is always written, so it can never be confused
-with "not set" and silently replaced by golangci-lint's own default.
+golangci-lint gives many fields a default that isn't: booleans that default
+to `true` (`usetesting`'s `os-chdir`, `tagalign`'s `align` and `sort`,
+several `unused` checks), lists such as `decorder`'s `dec-order` or `gci`'s
+`sections`, and strings such as `wsl_v5`'s `default`, as listed in
+golangci-lint's own `defaultLintersSettings` and `defaultFormatterSettings`.
+For those, the shadow type omits no zero value: an explicit `false`, `0`,
+`""` or `[]` is always written, so it can never be confused with "not set"
+and silently replaced by golangci-lint's own default.
+
+The tests hold the package to this: they fill every field of every type,
+leave each one at its zero value in turn, and read the output back through
+viper with golangci-lint's own decode hooks and defaults, expecting the
+config they started from.
 
 One consequence follows directly from using plain Go values: a settings
 struct is itself omitted when *every* one of its fields happens to be the Go

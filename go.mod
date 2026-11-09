@@ -2,7 +2,10 @@ module github.com/MarkRosemaker/golangci-json
 
 go 1.27.0
 
-require github.com/golangci/golangci-lint/v2 v2.15.0
+require (
+	github.com/golangci/golangci-lint/v2 v2.15.0
+	github.com/spf13/viper v1.21.0
+)
 
 require (
 	github.com/fatih/color v1.19.0 // indirect
@@ -19,7 +22,6 @@ require (
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.1.0 // indirect
-	github.com/spf13/viper v1.21.0 // indirect
 	github.com/stretchr/objx v0.8.0 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect

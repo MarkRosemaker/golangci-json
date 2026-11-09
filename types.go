@@ -21,9 +21,10 @@ import (
 // omitzero/omitempty is applied per field, not uniformly: it is present only
 // where the Go zero value matches golangci-lint's own default for that field
 // (cross-checked against defaultLintersSettings and defaultFormatterSettings
-// in the vendored source). Where the zero value is NOT the default — several
-// booleans default to true — the tag omits omitzero, so an explicit false is
-// always written rather than being indistinguishable from "unset".
+// in the vendored source). Where the zero value is NOT the default — booleans
+// that default to true, non-empty default lists, non-empty default strings —
+// the tag omits omitzero, so an explicit zero is always written rather than
+// being indistinguishable from "unset".
 //
 // Types embedding another via mapstructure:",squash" are not here: an embedded
 // field is promoted using its own field names, bypassing any marshaler
@@ -83,7 +84,7 @@ type cyclopSettings struct {
 }
 
 type decorderSettings struct {
-	DecOrder                  []string `json:"dec-order,omitempty"`
+	DecOrder                  []string `json:"dec-order"`
 	IgnoreUnderscoreVars      bool     `json:"ignore-underscore-vars,omitzero"`
 	DisableDecNumCheck        bool     `json:"disable-dec-num-check"`
 	DisableTypeDecNumCheck    bool     `json:"disable-type-dec-num-check,omitzero"`
@@ -157,7 +158,7 @@ type errorLintSettings struct {
 }
 
 type exhaustiveSettings struct {
-	Check                      []string `json:"check,omitempty"`
+	Check                      []string `json:"check"`
 	ExplicitExhaustive         bool     `json:"explicit-exhaustive,omitzero"`
 	OnlyTypes                  []string `json:"only-types,omitempty"`
 	IgnoreTypes                []string `json:"ignore-types,omitempty"`
@@ -261,7 +262,7 @@ type funlenSettings struct {
 }
 
 type gciSettings struct {
-	Sections         []string `json:"sections,omitempty"`
+	Sections         []string `json:"sections"`
 	NoInlineComments bool     `json:"no-inline-comments,omitzero"`
 	NoPrefixComments bool     `json:"no-prefix-comments,omitzero"`
 	CustomOrder      bool     `json:"custom-order,omitzero"`
@@ -298,7 +299,7 @@ type goConstSettings struct {
 	ParseNumbers         bool     `json:"numbers,omitzero"`
 	NumberMin            int      `json:"min"`
 	NumberMax            int      `json:"max"`
-	ExcludeTypes         []string `json:"exclude-types,omitempty"`
+	ExcludeTypes         []string `json:"exclude-types"`
 	FindDuplicates       bool     `json:"find-duplicates,omitzero"`
 	EvalConstExpressions bool     `json:"eval-const-expressions,omitzero"`
 	IgnoreFunctions      []string `json:"ignore-functions,omitempty"`
@@ -452,7 +453,7 @@ type godoxSettings struct {
 type gosmopolitanSettings struct {
 	AllowTimeLocal  bool     `json:"allow-time-local,omitzero"`
 	EscapeHatches   []string `json:"escape-hatches,omitempty"`
-	WatchForScripts []string `json:"watch-for-scripts,omitempty"`
+	WatchForScripts []string `json:"watch-for-scripts"`
 }
 
 type govetSettings struct {
@@ -762,7 +763,7 @@ type preallocSettings struct {
 type predeclaredSettings struct {
 	Ignore    []string `json:"ignore,omitempty"`
 	Qualified bool     `json:"qualified-name,omitzero"`
-	Mode      []string `json:"mode,omitzero"`
+	Mode      []string `json:"mode"`
 }
 
 type promlinterSettings struct {
@@ -939,7 +940,7 @@ type testifylintSuiteExtraAssertCall struct {
 
 type testpackageSettings struct {
 	SkipRegexp    string   `json:"skip-regexp"`
-	AllowPackages []string `json:"allow-packages,omitempty"`
+	AllowPackages []string `json:"allow-packages"`
 }
 
 type thelperOptions struct {
@@ -1056,11 +1057,11 @@ type wSLv4Settings struct {
 	AllowTrailingComment             bool     `json:"allow-trailing-comment,omitzero"`
 	AllowSeparatedLeadingComment     bool     `json:"allow-separated-leading-comment,omitzero"`
 	AllowCuddleDeclaration           bool     `json:"allow-cuddle-declarations,omitzero"`
-	AllowCuddleWithCalls             []string `json:"allow-cuddle-with-calls,omitempty"`
-	AllowCuddleWithRHS               []string `json:"allow-cuddle-with-rhs,omitempty"`
+	AllowCuddleWithCalls             []string `json:"allow-cuddle-with-calls"`
+	AllowCuddleWithRHS               []string `json:"allow-cuddle-with-rhs"`
 	AllowCuddleUsedInBlock           bool     `json:"allow-cuddle-used-in-block,omitzero"`
 	ForceCuddleErrCheckAndAssign     bool     `json:"force-err-cuddling,omitzero"`
-	ErrorVariableNames               []string `json:"error-variable-names,omitempty"`
+	ErrorVariableNames               []string `json:"error-variable-names"`
 	ForceExclusiveShortDeclarations  bool     `json:"force-short-decl-cuddling,omitzero"`
 }
 
@@ -1070,7 +1071,7 @@ type wSLv5Settings struct {
 	BranchMaxLines      int      `json:"branch-max-lines"`
 	CaseMaxLines        int      `json:"case-max-lines,omitzero"`
 	CuddleMaxStatements int      `json:"cuddle-max-statements"`
-	Default             string   `json:"default,omitzero"`
+	Default             string   `json:"default"`
 	Enable              []string `json:"enable,omitempty"`
 	Disable             []string `json:"disable,omitempty"`
 }
