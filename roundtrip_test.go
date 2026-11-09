@@ -223,6 +223,13 @@ func assertRoundTrip(t *testing.T, want config.Config) {
 		t.Fatal(err)
 	}
 
+	assertDecodes(t, b, want)
+}
+
+// assertDecodes checks that golangci-lint reads b, the output, as want.
+func assertDecodes(t *testing.T, b []byte, want config.Config) {
+	t.Helper()
+
 	got := decode(t, b)
 	// golangci-lint copies this from formatters.settings rather than decoding it.
 	got.Linters.Settings.FormatterSettings = config.FormatterSettings{}
@@ -248,11 +255,13 @@ func TestRoundTripEveryField(t *testing.T) {
 	assertRoundTrip(t, cfg)
 }
 
-// TestRoundTripEachZeroField leaves one field at a time at its Go zero value:
-// the output must say so, either by omitting the key where golangci-lint's
-// default is that zero value, or by writing it where the default differs.
+// TestRoundTripEachZeroField leaves one field at a time at its Go zero value,
+// and golangci-lint must read back what that zero means: false for a boolean,
+// which is always written, and golangci-lint's own default for a list or a
+// string, which are left out when unset.
 func TestRoundTripEachZeroField(t *testing.T) {
 	_, leaves, _ := filledConfig(0)
+	defaults := reflect.ValueOf(config.NewDefault()).Elem()
 
 	for skip := 1; skip <= leaves; skip++ {
 		cfg, _, emptied := filledConfig(skip)
@@ -260,7 +269,81 @@ func TestRoundTripEachZeroField(t *testing.T) {
 			continue // the whole block is omitted: see TestZeroSettingsStructOmitsTheWholeBlock
 		}
 
-		t.Run(fmt.Sprint(skip), func(t *testing.T) { assertRoundTrip(t, cfg) })
+		t.Run(fmt.Sprint(skip), func(t *testing.T) {
+			b, err := golangcijson.Marshal(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := cfg
+			keepDefaults(reflect.ValueOf(&want).Elem(), defaults)
+			assertDecodes(t, b, want)
+		})
+	}
+}
+
+// keepDefaults gives each list and string of want that is unset golangci-lint's
+// default from defaults, which is what it reads where the key is left out.
+func keepDefaults(want, defaults reflect.Value) {
+	switch want.Kind() {
+	case reflect.Struct:
+		for i := range want.NumField() {
+			if want.Type().Field(i).IsExported() {
+				keepDefaults(want.Field(i), defaults.Field(i))
+			}
+		}
+	case reflect.Pointer:
+		if !want.IsNil() && !defaults.IsNil() {
+			keepDefaults(want.Elem(), defaults.Elem())
+		}
+	case reflect.Slice:
+		if want.IsNil() && defaults.Len() > 0 {
+			want.Set(deepCopy(defaults))
+		}
+	case reflect.String:
+		if want.String() == "" {
+			want.Set(defaults)
+		}
+	default:
+	}
+}
+
+// A list golangci-lint gives a default to is left out while unset, so the
+// default stays, and written as [] when set empty, which replaces it.
+func TestEmptyListIsWrittenUnsetListIsNot(t *testing.T) {
+	var cfg config.Config
+
+	cfg.Linters.Settings.Decorder.DisableDecOrderCheck = true // writes the decorder block
+	cfg.Linters.Settings.Exhaustive.DefaultSignifiesExhaustive = true
+	cfg.Formatters.Settings.Gci.CustomOrder = true
+
+	b, err := golangcijson.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := decode(t, b)
+	if want := []string{"type", "const", "var", "func"}; !reflect.DeepEqual(got.Linters.Settings.Decorder.DecOrder, want) {
+		t.Errorf("unset dec-order: got %v, want golangci-lint's default %v\n%s", got.Linters.Settings.Decorder.DecOrder, want, b)
+	}
+
+	cfg.Linters.Settings.Decorder.DecOrder = []string{}
+	cfg.Linters.Settings.Exhaustive.Check = []string{}
+	cfg.Formatters.Settings.Gci.Sections = []string{}
+
+	if b, err = golangcijson.Marshal(cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	got = decode(t, b)
+	for name, list := range map[string][]string{
+		"decorder.dec-order": got.Linters.Settings.Decorder.DecOrder,
+		"exhaustive.check":   got.Linters.Settings.Exhaustive.Check,
+		"gci.sections":       got.Formatters.Settings.Gci.Sections,
+	} {
+		if len(list) != 0 {
+			t.Errorf("%s set empty: got %v, want it empty\n%s", name, list, b)
+		}
 	}
 }
 
